@@ -6,6 +6,13 @@
 - 유튜브 링크 또는 검색어로 곡을 재생합니다.
 - 곡이 끝나면 대기열의 다음 곡을 자동으로 재생합니다.
 - 토큰은 같은 폴더의 .env 파일(DISCORD_TOKEN=...)에서만 읽습니다.
+
+슬래시 명령어 (짧은 이름)
+    /r <유튜브 링크 또는 검색어>  재생(대기열에 추가)
+    /s                            스킵
+    /q                            대기열 보기
+    /x                            정지 + 대기열 비우기 + 음성 채널 나가기
+    /일시정지, /재개, /현재곡      보조 명령어
 """
 
 from __future__ import annotations
@@ -205,7 +212,7 @@ class MusicPlayer:
                 if self.current is not None:
                     self.current = None
                     await self.announce(
-                        "🎵 대기열이 비었어요. 다음 곡을 틀려면 `/재생`으로 추가해 주세요!"
+                        "🎵 대기열이 비었어요. 다음 곡을 틀려면 `/r` 로 추가해 주세요!"
                     )
                 await self._wake.wait()
                 self._wake.clear()
@@ -229,7 +236,7 @@ class MusicPlayer:
     async def _start_track(self, track: Track) -> bool:
         vc = self.voice
         if vc is None or not vc.is_connected():
-            await self.announce("🔌 음성 채널 연결이 끊겨서 재생을 멈췄어요. `/재생`으로 다시 시작해 주세요.")
+            await self.announce("🔌 음성 채널 연결이 끊겨서 재생을 멈췄어요. `/r` 로 다시 시작해 주세요.")
             self.queue.clear()
             self.current = None
             return False
@@ -321,7 +328,7 @@ class MusicBot(commands.Bot):
                 log.info("'%s' 서버에 명령어 %d개 등록", guild.name, len(synced))
             except discord.HTTPException as exc:
                 log.warning("'%s' 서버 명령어 등록 실패: %s", guild.name, exc)
-        log.info("준비 완료! 디스코드에서 /재생 을 입력해 보세요.")
+        log.info("준비 완료! 디스코드에서 /r 을 입력해 보세요.")
 
     def player(self, guild: discord.Guild) -> MusicPlayer:
         if guild.id not in self.players:
@@ -393,7 +400,7 @@ async def require_voice(interaction: discord.Interaction) -> Optional[discord.Vo
 
 
 # ---------------------------------------------------------------- 명령어
-@bot.tree.command(name="재생", description="유튜브 링크나 검색어로 곡을 대기열에 추가해요")
+@bot.tree.command(name="r", description="유튜브 링크나 검색어로 곡을 재생해요")
 @app_commands.describe(검색어="유튜브 링크 또는 곡 제목 / 가수")
 async def play(interaction: discord.Interaction, 검색어: str) -> None:
     await interaction.response.defer()
@@ -434,7 +441,7 @@ async def play(interaction: discord.Interaction, 검색어: str) -> None:
         await interaction.followup.send(embed=embed)
 
 
-@bot.tree.command(name="스킵", description="지금 나오는 곡을 건너뛰고 다음 곡을 틀어요")
+@bot.tree.command(name="s", description="지금 나오는 곡을 건너뛰고 다음 곡을 틀어요")
 async def skip(interaction: discord.Interaction) -> None:
     if interaction.guild is None:
         await interaction.response.send_message("서버 안에서만 쓸 수 있어요.", ephemeral=True)
@@ -467,7 +474,7 @@ async def resume(interaction: discord.Interaction) -> None:
         await interaction.response.send_message("멈춰 있는 곡이 없어요.", ephemeral=True)
 
 
-@bot.tree.command(name="정지", description="재생을 멈추고 대기열을 비우며 음성 채널에서 나가요")
+@bot.tree.command(name="x", description="재생을 멈추고 대기열을 비우며 음성 채널에서 나가요")
 async def stop(interaction: discord.Interaction) -> None:
     if interaction.guild is None:
         await interaction.response.send_message("서버 안에서만 쓸 수 있어요.", ephemeral=True)
@@ -480,7 +487,7 @@ async def stop(interaction: discord.Interaction) -> None:
     await interaction.response.send_message("⏹️ 재생을 멈추고 음성 채널에서 나왔어요.")
 
 
-@bot.tree.command(name="대기열", description="대기열에 있는 곡 목록을 보여줘요")
+@bot.tree.command(name="q", description="대기열에 있는 곡 목록을 보여줘요")
 async def queue_cmd(interaction: discord.Interaction) -> None:
     if interaction.guild is None:
         await interaction.response.send_message("서버 안에서만 쓸 수 있어요.", ephemeral=True)
@@ -488,7 +495,7 @@ async def queue_cmd(interaction: discord.Interaction) -> None:
     player = bot.player(interaction.guild)
 
     if player.current is None and not player.queue:
-        await interaction.response.send_message("대기열이 비어 있어요. `/재생` 으로 곡을 추가해 주세요.", ephemeral=True)
+        await interaction.response.send_message("대기열이 비어 있어요. `/r` 로 곡을 추가해 주세요.", ephemeral=True)
         return
 
     lines: list[str] = []
@@ -521,7 +528,7 @@ async def now_playing(interaction: discord.Interaction) -> None:
     track = player.current
 
     if track is None:
-        await interaction.response.send_message("지금 재생 중인 곡이 없어요. `/재생` 으로 곡을 추가해 주세요.", ephemeral=True)
+        await interaction.response.send_message("지금 재생 중인 곡이 없어요. `/r` 로 곡을 추가해 주세요.", ephemeral=True)
         return
 
     embed = discord.Embed(title="🎧 지금 재생 중", description=f"**{track.title}**", color=0x57F287)
