@@ -22,9 +22,15 @@ REM ================= 1단계 : Python 확인 =================
 echo [1/4] Python 확인 중...
 
 set "PY="
-py -3 -c "import sys" >nul 2>nul && set "PY=py -3"
+py -3 -c "import sys" >nul 2>nul
+if not errorlevel 1 (
+    for /f "delims=" %%i in ('py -3 -c "import sys;print(sys.executable)"') do set "PY=%%i"
+)
 if not defined PY (
-    python -c "import sys" >nul 2>nul && set "PY=python"
+    python -c "import sys" >nul 2>nul
+    if not errorlevel 1 (
+        for /f "delims=" %%i in ('python -c "import sys;print(sys.executable)"') do set "PY=%%i"
+    )
 )
 
 if not defined PY (
@@ -39,7 +45,10 @@ if not defined PY (
         exit /b 1
     )
     winget install -e --id Python.Python.3.12 --accept-source-agreements --accept-package-agreements
-    py -3 -c "import sys" >nul 2>nul && set "PY=py -3"
+    py -3 -c "import sys" >nul 2>nul
+    if not errorlevel 1 (
+        for /f "delims=" %%i in ('py -3 -c "import sys;print(sys.executable)"') do set "PY=%%i"
+    )
     if not defined PY (
         if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
     )
@@ -51,8 +60,8 @@ if not defined PY (
     )
 )
 
-for /f "delims=" %%v in ('%PY% -c "import sys;print(sys.version.split()[0])"') do set "PYVER=%%v"
-echo        Python !PYVER! OK
+echo        Python 확인:
+"%PY%" --version
 
 REM ================= 2단계 : FFmpeg 확인 =================
 echo [2/4] FFmpeg 확인 중...
@@ -82,7 +91,7 @@ echo [3/4] 필요한 패키지 설치 중... 처음 한 번만 1~2분 걸려요.
 
 if not exist ".venv\Scripts\python.exe" (
     echo        가상환경(.venv)을 만듭니다...
-    %PY% -m venv .venv
+    "%PY%" -m venv .venv
     if errorlevel 1 goto :venvfail
 )
 
@@ -100,9 +109,9 @@ echo [4/4] 봇 토큰 확인 중...
 if not exist ".env" (
     echo.
     echo   ── 봇 토큰이 아직 없어요 ──
-    echo   1^) 브라우저에서 https://discord.com/developers/applications 접속
-    echo   2^) 봇 선택 후 왼쪽 메뉴에서 Bot
-    echo   3^) [Reset Token] 눌러서 나온 토큰 복사
+    echo   1^) 브라우저에서 https://discord.com/developers/applications/1572389279139758090/bot 접속
+    echo   2^) [토큰 초기화] ^> [비밀번호 사용] ^> 디스코드 비밀번호 입력
+    echo   3^) 나온 토큰을 복사
     echo.
     set /p "TOKEN=   토큰을 붙여넣고 Enter: "
     if "!TOKEN!"=="" (
@@ -112,7 +121,7 @@ if not exist ".env" (
         exit /b 1
     )
     > ".env" echo DISCORD_TOKEN=!TOKEN!
-    echo        .env 파일을 만들었습니다. (이 파일은 절대 남에게 보내지 마세요!)
+    echo        .env 파일을 만들었습니다. 이 파일은 절대 남에게 보내지 마세요!
 )
 echo        토큰 OK
 
