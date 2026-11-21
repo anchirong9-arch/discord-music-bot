@@ -90,7 +90,7 @@ REM ================= 3단계 : 가상환경 + 패키지 =================
 echo [3/4] 필요한 패키지 설치 중... 처음 한 번만 1~2분 걸려요.
 
 if not exist ".venv\Scripts\python.exe" (
-    echo        가상환경(.venv)을 만듭니다...
+    echo        가상환경 .venv 를 만듭니다...
     "%PY%" -m venv .venv
     if errorlevel 1 goto :venvfail
 )
